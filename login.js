@@ -1,6 +1,10 @@
-// Importar Firebase como módulo
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
-import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js';
+import { 
+  getAuth, 
+  signInWithEmailAndPassword, 
+  setPersistence, 
+  browserSessionPersistence 
+} from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js';
 
 document.addEventListener('DOMContentLoaded', function() {
   // Configuración de Firebase
@@ -36,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loginMessage.classList.remove('show');
     setTimeout(() => {
       loginMessage.style.display = 'none';
-    }, 300); // Espera a que termine la animación de salida
+    }, 300);
   }
 
   // Toggle mostrar/ocultar contraseña
@@ -60,16 +64,22 @@ document.addEventListener('DOMContentLoaded', function() {
     hideMessage();
 
     try {
+      // Configurar persistencia de sesión (solo para esta pestaña)
+      await setPersistence(auth, browserSessionPersistence);
+      
       // Autenticar al usuario
       await signInWithEmailAndPassword(auth, email, password);
+      
       showMessage('Ingreso exitoso', 'success');
-      // Redirigir tras 1.5 segundos
+      
+      // Redirigir con replace para evitar caché
       setTimeout(() => {
-        window.location.href = 'admin.html';
+        window.location.replace('admin.html');
       }, 1500);
     } catch (error) {
       console.error("Error al iniciar sesión:", error);
       let errorMessage = 'Hubo un problema al iniciar sesión. Verifica tus credenciales.';
+      
       if (error.code === 'auth/wrong-password') {
         errorMessage = 'Contraseña incorrecta. Intenta de nuevo.';
       } else if (error.code === 'auth/user-not-found') {
@@ -77,8 +87,8 @@ document.addEventListener('DOMContentLoaded', function() {
       } else if (error.code === 'auth/invalid-email') {
         errorMessage = 'Correo electrónico inválido.';
       }
+      
       showMessage(errorMessage, 'error');
-      // Rehabilitar formulario
       loginButton.disabled = false;
       loginButton.classList.remove('loading');
     }
