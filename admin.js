@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
       signOut(auth).then(() => {
         window.location.href = `login.html?timeout=1&t=${Date.now()}`;
       });
-    }, 30000); // 30 minutos
+    },  600000); 
   }
 
   // Eventos para resetear timer (sin afectar estilos)
