@@ -787,10 +787,17 @@ main.admin-main {
   .admin-header {
     flex-direction: column;
     height: auto;
-    padding: 1rem;
+    padding: 2rem;
     gap: 1rem;
   }
-  
+#agregar-tono {
+  font-size: 0.8rem;         /* un poco más grande que 0.7rem */
+  padding: 8px 12px;         /* más espacio interno */
+  height: auto;
+  width: fit-content;
+  max-width: 100%;
+}
+
   .logo-container {
     flex-direction: column;
     gap: 0.5rem;
@@ -925,6 +932,7 @@ main.admin-main {
   .btn-secondary {
     width: 100%;
   }
+
   
   /* Footer */
   .admin-footer {
