@@ -106,47 +106,47 @@ function startQuickTour() {
     steps: [
       {
         element: document.querySelector('.admin-header'),
-        intro: '🌟 <strong>Panel de Administración</strong><br><br>Centro de control para gestionar todos tus productos.',
+        intro: '<strong>Panel de Administración</strong><br><br>Centro de control para gestionar todos los productos de la web.',
         position: 'bottom'
       },
       {
         element: document.querySelector('.volver-tienda'),
-        intro: '🛍️ <strong>Volver a la tienda</strong><br><br>Regresa al catálogo público en cualquier momento.',
+        intro: '<strong>Volver a la tienda</strong><br><br>Ir a la web principal en cualquier momento.',
         position: 'bottom'
       },
       {
         element: document.querySelector('#logout-btn'),
-        intro: '🔒 <strong>Cerrar sesión</strong><br><br>Salida segura de tu cuenta.',
+        intro: '<strong>Cerrar sesión</strong><br><br>Cierra la sesión del panel administrativo.',
         position: 'bottom'
       },
       {
         element: document.querySelector('#start-tour-btn'),
-        intro: '🔄 <strong>Repetir tour</strong><br><br>Vuelve a ver esta guía cuando lo necesites.',
+        intro: '<strong>Repetir tour</strong><br><br>Vuelve a ver esta guía en cualquier momento.',
         position: 'left'
       },
       {
         element: document.querySelector('.table-header'),
-        intro: '📋 <strong>Listado de productos</strong><br><br>Visualiza y gestiona tu inventario completo.',
+        intro: '<strong>Listado de productos</strong><br><br>Visualiza y gestiona los productos.',
         position: 'bottom'
       },
       {
         element: document.querySelector('#table-search'),
-        intro: '🔍 <strong>Buscar productos</strong><br><br>Filtra por nombre o categoría fácilmente.',
+        intro: '<strong>Buscar productos</strong><br><br>Filtra por nombre o categoría fácilmente.',
         position: 'bottom'
       },
       {
         element: document.querySelector('#agregar-producto-btn'),
-        intro: '➕ <strong>Agregar producto</strong><br><br>Crea nuevos artículos para tu catálogo.',
+        intro: '<strong>Agregar producto</strong><br><br>Crea nuevos productos para el catálogo online.',
         position: 'left'
       },
       {
         element: document.querySelector('#cuerpo-productos'),
-        intro: '🛒 <strong>Tus productos</strong><br><br>Aquí se muestran todas tus publicaciones.',
+        intro: '<strong>Tus productos</strong><br><br>En esta sección se muestran todos los productos cargados en la web.',
         position: 'top'
       },
       {
         element: document.querySelector('.product-card:first-child'),
-        intro: '📦 <strong>Gestión de productos</strong><br><br>Acciones disponibles:<br>• <strong>Editar</strong>: Modificar detalles<br>• <strong>Eliminar</strong>: Retirar producto',
+        intro: '<strong>Gestión de productos</strong><br><br>Acciones disponibles:<br>• <strong>Editar</strong>: Modificar producto<br>• <strong>Eliminar</strong>: Retirar producto de la web.',
         position: 'top'
       },
       {
