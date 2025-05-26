@@ -493,3 +493,21 @@ body::before {
     font-size: 0.95rem;
   }
 }
+
+.form-group {
+  position: relative;
+}
+
+#toggle-password {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 1rem;
+  color: #888;
+}
+
+#toggle-password:hover {
+  color: var(--primary-color);
+}
