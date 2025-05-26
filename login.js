@@ -44,12 +44,19 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Toggle mostrar/ocultar contraseña
-  togglePassword.addEventListener('click', () => {
-    const isPassword = passwordInput.type === 'password';
-    passwordInput.type = isPassword ? 'text' : 'password';
-    togglePassword.classList.toggle('fa-eye', isPassword);
-    togglePassword.classList.toggle('fa-eye-slash', !isPassword);
-  });
+togglePassword.addEventListener('click', () => {
+  const isPassword = passwordInput.type === 'password';
+  passwordInput.type = isPassword ? 'text' : 'password';
+
+  // Cambiar ícono de forma segura
+  if (isPassword) {
+    togglePassword.classList.remove('fa-eye');
+    togglePassword.classList.add('fa-eye-slash');
+  } else {
+    togglePassword.classList.remove('fa-eye-slash');
+    togglePassword.classList.add('fa-eye');
+  }
+});
 
   // Manejar el envío del formulario
   loginForm.addEventListener('submit', async (e) => {
