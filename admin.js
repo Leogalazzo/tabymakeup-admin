@@ -3,11 +3,11 @@ import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc } 
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js';
 
 document.addEventListener('DOMContentLoaded', function() {
-  // Limpieza inicial (esto no afecta estilos)
+  // Limpieza inicial
   sessionStorage.removeItem('firebase:authUser');
   localStorage.removeItem('firebase:authUser');
 
-  // Configuración de Firebase (original)
+  // Configuración de Firebase
   const firebaseConfig = {
     apiKey: "AIzaSyD-P5-GOlwT-Ax51u3giJm1G-oXmfOf9-g",
     authDomain: "tabymakeup-of.firebaseapp.com",
@@ -17,12 +17,12 @@ document.addEventListener('DOMContentLoaded', function() {
     appId: "1:548834143470:web:54812e64324b3629f617ff"
   };
 
-  // Inicializar Firebase (original)
+  // Inicializar Firebase
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   const auth = getAuth(app);
 
-  // Control de inactividad (nueva funcionalidad)
+  // Control de inactividad
   let inactivityTimer;
   function resetInactivityTimer() {
     clearTimeout(inactivityTimer);
@@ -30,15 +30,14 @@ document.addEventListener('DOMContentLoaded', function() {
       signOut(auth).then(() => {
         window.location.href = `login.html?timeout=1&t=${Date.now()}`;
       });
-    },  600000); 
+    }, 600000);
   }
 
-  // Eventos para resetear timer (sin afectar estilos)
   ['mousedown', 'mousemove', 'keypress', 'scroll', 'click', 'touchstart'].forEach(event => {
-    document.addEventListener(event, resetInactivityTimer);
+   document.addEventListener(event, resetInactivityTimer);
   });
 
-  // Verificación de autenticación (mejorada pero manteniendo tu flujo)
+  // Verificación de autenticación
   onAuthStateChanged(auth, (user) => {
     if (!user) {
       localStorage.removeItem('firebase:authUser');
@@ -47,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Referencias DOM (ORIGINALES - manteniendo tus clases CSS)
+  // Referencias DOM
   const formProducto = document.getElementById('form-producto');
   const cuerpoProductos = document.getElementById('cuerpo-productos');
   const formTitle = document.getElementById('form-title');
@@ -69,37 +68,138 @@ document.addEventListener('DOMContentLoaded', function() {
   const confirmBtn = document.getElementById('confirmLogout');
   const cancelBtn = document.getElementById('cancelLogout');
 
-  // Variables de estado (originales)
+  // Variables de estado
   let editando = false;
   let productoId = null;
   let productos = [];
   let lastScrollTop = 0;
 
-  // Inicialización de modales (original)
+  // Inicialización de modales
   modalImagenAmpliada.style.display = 'none';
 
-  // Función de confirmación (ORIGINAL manteniendo tus estilos)
-  function showConfirmModal(title, message, confirmText, onConfirm) {
+  // Función de confirmación modificada
+  function showConfirmModal(title, message, confirmText, onConfirm, showCancel = true) {
     confirmModal.querySelector('h3').textContent = title;
     confirmModal.querySelector('p').textContent = message;
     confirmBtn.textContent = confirmText;
+    cancelBtn.style.display = showCancel ? 'inline-block' : 'none'; // Mostrar u ocultar botón de cancelar
     
     confirmBtn.onclick = async () => {
       try {
-        await onConfirm();
+        if (onConfirm) await onConfirm();
       } finally {
         confirmModal.style.display = 'none';
       }
     };
     
-    cancelBtn.onclick = () => {
-      confirmModal.style.display = 'none';
-    };
+    if (showCancel) {
+      cancelBtn.onclick = () => {
+        confirmModal.style.display = 'none';
+      };
+    }
     
     confirmModal.style.display = 'flex';
   }
+function startQuickTour() {
+  const intro = introJs();
+  intro.setOptions({
+    steps: [
+      {
+        element: document.querySelector('.admin-header'),
+        intro: '🌟 <strong>Panel de Administración</strong><br><br>Centro de control para gestionar todos tus productos.',
+        position: 'bottom'
+      },
+      {
+        element: document.querySelector('.volver-tienda'),
+        intro: '🛍️ <strong>Volver a la tienda</strong><br><br>Regresa al catálogo público en cualquier momento.',
+        position: 'bottom'
+      },
+      {
+        element: document.querySelector('#logout-btn'),
+        intro: '🔒 <strong>Cerrar sesión</strong><br><br>Salida segura de tu cuenta.',
+        position: 'bottom'
+      },
+      {
+        element: document.querySelector('#start-tour-btn'),
+        intro: '🔄 <strong>Repetir tour</strong><br><br>Vuelve a ver esta guía cuando lo necesites.',
+        position: 'left'
+      },
+      {
+        element: document.querySelector('.table-header'),
+        intro: '📋 <strong>Listado de productos</strong><br><br>Visualiza y gestiona tu inventario completo.',
+        position: 'bottom'
+      },
+      {
+        element: document.querySelector('#table-search'),
+        intro: '🔍 <strong>Buscar productos</strong><br><br>Filtra por nombre o categoría fácilmente.',
+        position: 'bottom'
+      },
+      {
+        element: document.querySelector('#agregar-producto-btn'),
+        intro: '➕ <strong>Agregar producto</strong><br><br>Crea nuevos artículos para tu catálogo.',
+        position: 'left'
+      },
+      {
+        element: document.querySelector('#cuerpo-productos'),
+        intro: '🛒 <strong>Tus productos</strong><br><br>Aquí se muestran todas tus publicaciones.',
+        position: 'top'
+      },
+      {
+        element: document.querySelector('.product-card:first-child'),
+        intro: '📦 <strong>Gestión de productos</strong><br><br>Acciones disponibles:<br>• <strong>Editar</strong>: Modificar detalles<br>• <strong>Eliminar</strong>: Retirar producto',
+        position: 'top'
+      },
+      {
+        element: document.querySelector('#scroll-top-btn'),
+        intro: '⬆️ <strong>Acceso rápido</strong><br><br>Vuelve al inicio con un solo clic.',
+        position: 'left'
+      }
+    ],
+    showStepNumbers: false,
+    exitOnOverlayClick: true,
+    exitOnEsc: true,
+    nextLabel: 'Siguiente →',
+    prevLabel: '← Anterior',
+    doneLabel: '¡Listo!',
+    tooltipClass: 'quick-tour-tooltip',
+    highlightClass: 'quick-tour-highlight',
+    scrollToElement: true,
+    scrollPadding: { top: 20, bottom: 20 }
+  });
 
-  // Cerrar sesión (ORIGINAL con clases CSS correctas)
+  // Control preciso del scroll para las tarjetas
+  intro.onbeforechange(function(targetElement) {
+    const currentStep = this._currentStep;
+    
+    // Ajuste especial para las tarjetas de producto
+    if (currentStep === 8 || currentStep === 9) {
+      setTimeout(() => {
+        const firstCard = document.querySelector('.product-card:first-child');
+        if (firstCard) {
+          const cardPosition = firstCard.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
+          
+          // Calcular posición para que la tarjeta quede en el tercio superior
+          const targetPosition = cardPosition.top - (viewportHeight * 0.2);
+          
+          window.scrollTo({
+            top: window.scrollY + targetPosition,
+            behavior: 'smooth'
+          });
+        }
+      }, 100);
+    }
+  });
+
+  intro.start();
+}
+
+// Iniciar el tour mejorado
+document.getElementById('start-tour-btn').addEventListener('click', function() {
+  resetInactivityTimer();
+  startQuickTour();
+});
+  // Cerrar sesión
   logoutBtn.addEventListener('click', () => {
     showConfirmModal(
       '¿Estás seguro?',
@@ -114,25 +214,26 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
           console.error("Error al cerrar sesión:", error);
         }
-      }
+      },
+      true // Mostrar botón de cancelar
     );
   });
 
-  // Modal de producto (ORIGINAL manteniendo estructura HTML)
+  // Modal de producto
   agregarProductoBtn.addEventListener('click', () => {
     resetInactivityTimer();
     formProducto.reset();
     tonosContainer.innerHTML = '';
     imagenPreview.src = '';
     imagenPreview.style.display = 'none';
-    formTitle.innerHTML = '<i class="fas fa-plus-circle"></i> Agregar Producto';
+    formTitle.innerHTML = '<i class="fas fa-plus-circle"></i> Agregar producto';
     cancelarEdicion.style.display = 'none';
     editando = false;
     productoId = null;
     modalProducto.style.display = 'block';
   });
 
-  // Cerrar modales (ORIGINAL)
+  // Cerrar modales
   modalClose.addEventListener('click', () => {
     modalProducto.style.display = 'none';
   });
@@ -147,7 +248,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Previsualización de imagen (ORIGINAL)
+  // Previsualización de imagen
   imagenInput.addEventListener('input', () => {
     const url = imagenInput.value;
     if (url) {
@@ -163,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Ampliar imagen (ORIGINAL)
+  // Ampliar imagen
   imagenPreview.addEventListener('click', (e) => {
     e.stopPropagation();
     if (imagenPreview.src && imagenPreview.style.display !== 'none') {
@@ -172,7 +273,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Cargar productos (ORIGINAL manteniendo estructura de tarjetas)
+  // Cargar productos
   async function cargarProductos(filtro = '') {
     try {
       const snapshot = await getDocs(collection(db, "productos"));
@@ -183,7 +284,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // Renderizar productos (ORIGINAL con clases CSS correctas)
+  // Renderizar productos
   function renderizarProductos(filtro = '') {
     cuerpoProductos.innerHTML = '';
     const productosFiltrados = productos.filter(producto =>
@@ -198,7 +299,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     productosFiltrados.forEach(producto => {
       const card = document.createElement('div');
-      card.className = 'product-card'; // Clase original
+      card.className = 'product-card';
       card.innerHTML = `
         <div class="product-card-header">
           <h3>${producto.nombre}</h3>
@@ -226,7 +327,6 @@ document.addEventListener('DOMContentLoaded', function() {
       cuerpoProductos.appendChild(card);
     });
 
-    // Eventos para imágenes (ORIGINAL)
     document.querySelectorAll('.imagen-tabla, .tono-preview').forEach(img => {
       img.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -235,7 +335,6 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     });
 
-    // Eventos para botones (ORIGINAL con clases correctas)
     document.querySelectorAll('.editar').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         const id = e.target.getAttribute('data-id');
@@ -259,7 +358,7 @@ document.addEventListener('DOMContentLoaded', function() {
           });
         }
 
-        formTitle.innerHTML = '<i class="fas fa-edit"></i> Editar Producto';
+        formTitle.innerHTML = '<i class="fas fa-edit"></i> Editar producto';
         cancelarEdicion.style.display = 'inline-block';
         editando = true;
         productoId = id;
@@ -281,21 +380,22 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (error) {
               console.error("Error al eliminar producto:", error);
             }
-          }
+          },
+          true // Mostrar botón de cancelar
         );
       });
     });
   }
 
-  // Búsqueda (ORIGINAL)
+  // Búsqueda
   tableSearch.addEventListener('input', () => {
     renderizarProductos(tableSearch.value);
   });
 
-  // Gestión de tonos (ORIGINAL manteniendo estructura)
+  // Gestión de tonos
   function agregarTonoInput(nombre = '', imagen = '') {
     const tonoDiv = document.createElement('div');
-    tonoDiv.className = 'tono-input'; // Clase original
+    tonoDiv.className = 'tono-input';
     tonoDiv.innerHTML = `
       <input type="text" class="tono-nombre" placeholder="Nombre del tono" value="${nombre}">
       <input type="text" class="tono-imagen" placeholder="URL de la imagen del tono" value="${imagen}">
@@ -339,7 +439,7 @@ document.addEventListener('DOMContentLoaded', function() {
     agregarTonoInput();
   });
 
-  // Formulario (ORIGINAL)
+  // Formulario
   formProducto.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -369,39 +469,64 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
       if (editando) {
         await updateDoc(doc(db, "productos", productoId), producto);
+        showConfirmModal(
+          '¡Producto actualizado!',
+          `El producto "${nombre}" fue actualizado exitosamente.`,
+          'Aceptar',
+          async () => {
+            // No se necesita acción adicional, solo cerrar el modal
+          },
+          false // No mostrar botón de cancelar
+        );
       } else {
         await addDoc(collection(db, "productos"), producto);
+        showConfirmModal(
+          '¡Producto agregado!',
+          `El producto "${nombre}" fue agregado exitosamente.`,
+          'Aceptar',
+          async () => {
+            // No se necesita acción adicional, solo cerrar el modal
+          },
+          false // No mostrar botón de cancelar
+        );
       }
 
       formProducto.reset();
       tonosContainer.innerHTML = '';
       imagenPreview.src = '';
       imagenPreview.style.display = 'none';
-      formTitle.innerHTML = '<i class="fas fa-plus-circle"></i> Agregar Producto';
+      formTitle.innerHTML = '<i class="fas fa-plus-circle"></i> Agregar producto';
       cancelarEdicion.style.display = 'none';
       editando = false;
       productoId = null;
       modalProducto.style.display = 'none';
-      cargarProductos();
+      await cargarProductos();
     } catch (error) {
       console.error("Error al guardar producto:", error);
+      showConfirmModal(
+        'Error',
+        'Hubo un problema al guardar el producto. Por favor, intenta de nuevo.',
+        'Aceptar',
+        async () => {},
+        false // No mostrar botón de cancelar
+      );
     }
   });
 
-  // Cancelar edición (ORIGINAL)
+  // Cancelar edición
   cancelarEdicion.addEventListener('click', () => {
     formProducto.reset();
     tonosContainer.innerHTML = '';
     imagenPreview.src = '';
     imagenPreview.style.display = 'none';
-    formTitle.innerHTML = '<i class="fas fa-plus-circle"></i> Agregar Producto';
+    formTitle.innerHTML = '<i class="fas fa-plus-circle"></i> Agregar producto';
     cancelarEdicion.style.display = 'none';
     editando = false;
     productoId = null;
     modalProducto.style.display = 'none';
   });
 
-  // Scroll (ORIGINAL)
+  // Scroll
   scrollTopBtn.addEventListener('click', () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
@@ -424,13 +549,13 @@ document.addEventListener('DOMContentLoaded', function() {
     lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
   });
 
-  // Cerrar con Escape (ORIGINAL)
+  // Cerrar con Escape
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && modalImagenAmpliada.style.display === 'block') {
       modalImagenAmpliada.style.display = 'none';
     }
   });
 
-  // Carga inicial (ORIGINAL)
+  // Carga inicial
   cargarProductos();
 });
