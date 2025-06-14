@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Subida a ImgBB en .webp</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; background: #f9f9f9; }
+    input, button { margin-top: 1rem; }
+    img { max-width: 300px; margin-top: 1rem; border: 1px solid #ccc; }
+    .link { margin-top: 1rem; word-break: break-all; }
+  </style>
+</head>
+<body>
+
+  <h2>Subir imagen </h2>
+  <input type="file" id="imageInput" accept="image/*">
+  <br>
+  <button onclick="convertAndUpload()">Subir imagen</button>
+
+  <div id="preview"></div>
+  <div class="link" id="imageLink"></div>
+
+  <script>
+    function convertAndUpload() {
+      const fileInput = document.getElementById('imageInput');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert("Seleccioná una imagen primero");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = function(event) {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+
+          // Convertir a webp
+          canvas.toBlob(function(blob) {
+            const formData = new FormData();
+            formData.append('image', blob, 'imagen.webp');
+
+            fetch('https://api.imgbb.com/1/upload?key=50f0ce5bf1eb4dd0fb58566dfb19c59a', {
+              method: 'POST',
+              body: formData
+            })
+            .then(res => res.json())
+            .then(result => {
+              if (result.success) {
+                const url = result.data.url;
+                document.getElementById('preview').innerHTML = `<img src="${url}" alt="Imagen subida">`;
+                document.getElementById('imageLink').innerHTML = `<strong>Link directo:</strong><br><a href="${url}" target="_blank">${url}</a>`;
+              } else {
+                alert("Error al subir la imagen");
+              }
+            })
+            .catch(err => {
+              console.error(err);
+              alert("Error en la subida");
+            });
+          }, 'image/webp', 0.8); // Calidad 0.8
+        };
+      };
+    }
+  </script>
+
+</body>
+</html>
