@@ -277,7 +277,7 @@ document.getElementById('start-tour-btn').addEventListener('click', function() {
   async function cargarProductos(filtro = '') {
     try {
       const snapshot = await getDocs(collection(db, "productos"));
-      productos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      productos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).reverse();
       renderizarProductos(filtro);
     } catch (error) {
       console.error("Error al cargar productos:", error);
