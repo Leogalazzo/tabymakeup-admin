@@ -9,8 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Dancing+Script&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
   <!-- Agregar CSS de Intro.js -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intro.js/7.2.0/introjs.min.css">
-  <link rel="icon" href="logo.png" type="image/webp">
+  
+  <link rel="icon" href="https://i.ibb.co/qYWjKTSd/logo.webp" type="image/webp">
 </head>
 <body>
   <header class="admin-header" data-step="1" data-intro="Bienvenido al Panel de Administración de TabyMakeup. Aquí puedes gestionar tus productos.">
@@ -21,19 +21,22 @@
       <span class="admin-title">Panel de Administración</span>
     </div>
     <div class="header-actions">
-   <a href="https://tabymakeup.com.ar" class="volver-tienda">
+      <a href="index.html" class="volver-tienda" data-step="2" data-intro="Haz clic aquí para volver a la tienda principal.">
         <i class="fas fa-arrow-left"></i> Ir a la tienda
       </a>
       <button id="logout-btn" class="btn-logout" data-step="3" data-intro="Cierra tu sesión desde este botón cuando termines.">
         <i class="fas fa-sign-out-alt"></i> Cerrar sesión
       </button>
     </div>
-     <button id="start-tour-btn" class="btn-tour" aria-label="Iniciar tour guiado">
-  <i class="fas fa-question-circle"></i> 
-  <span class="tour-text">Guía de uso</span>
+
+ <button id="upload-image-btn" class="btn-tour" aria-label="Generar link de imagen">
+  <i class="fas fa-image"></i> 
+  <span class="tour-text">Generar</span>
+  
 </button>
+
   </header>
-  <main class="admin-main">
+<main class="admin-main">
     <section class="admin-container">
       <!-- Contenedor de tarjetas de productos -->
       <div class="card table-card">
@@ -44,6 +47,11 @@
               <input type="text" id="table-search" placeholder="Buscar producto..." data-step="6" data-intro="Usa este campo para buscar productos por nombre o categoría.">
               <i class="fas fa-search"></i>
             </div>
+            <select id="disponibilidad-filter" class="filter-select" data-step="6.1" data-intro="Filtra productos por disponibilidad">
+              <option value="all">Todos</option>
+              <option value="available">Disponibles</option>
+              <option value="unavailable">No disponibles</option>
+            </select>
             <button id="agregar-producto-btn" class="btn-add-product" data-step="7" data-intro="Haz clic aquí para agregar un nuevo producto.">
               <i class="fas fa-plus"></i> Nuevo producto
             </button>
@@ -97,25 +105,38 @@
           <label for="precio">Precio ($)</label>
           <input type="number" id="precio" step="0.01" placeholder="Ej: 1500" required data-step="12" data-intro="Define el precio del producto.">
         </div>
-        <div class="form-group">
-          <label for="imagen">URL de la imagen</label>
-          <input type="text" id="imagen" placeholder="Pega la URL de la imagen" required data-step="13" data-intro="Pega la URL de la imagen del producto.">
-          <div class="image-preview">
-            <img id="imagen-preview" src="" alt="Previsualización de la imagen" style="display: none;">
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="descripcion">Descripción (opcional)</label>
-          <textarea id="descripcion" placeholder="Describe el producto..." data-step="14" data-intro="Agrega una descripción opcional del producto."></textarea>
-        </div>
+<div class="form-group">
+  <label for="imagen">URL de la imagen</label>
+  <div style="display: flex; gap: 10px;">
+    <input type="text" id="imagen" placeholder="Pegar o generar" required style="flex: 1;">
+    <button type="button" id="subir-desde-input" class="btn-secondary">
+      <i class="fas fa-upload"></i>
+    </button>
+  </div>
+  <div class="image-preview">
+    <img id="imagen-preview" src="" alt="Previsualización de la imagen" style="display: none;">
+  </div>
+
+  <div class="form-hint-link" style="margin-top: 12px; padding: 12px; background: #fff7f0; border-left: 4px solid #ff914d; border-radius: 6px; font-size: 0.95em; display: flex; align-items: center; gap: 10px;">
+    <i class="fas fa-link" style="color: #ff914d;"></i>
+    <span>
+    ¿No se sube la imagen? 
+      <a href="https://admintabymakeup.netlify.app/imagenes" target="_blank" rel="noopener noreferrer" style="color: #d35400; font-weight: 500; text-decoration: underline;">
+       Generar desde aca
+      </a>
+    </span>
+  </div>
+</div>
+
+
         <div class="form-group checkbox-group">
           <label for="disponible">Disponible</label>
           <input type="checkbox" id="disponible" checked data-step="15" data-intro="Marca si el producto está disponible.">
         </div>
         <div class="form-group tonos-group">
-          <label>Tonos (opcional)</label>
+          <label>Variantes (opcional)</label>
           <div id="tonos-container" data-step="16" data-intro="Agrega tonos opcionales para el producto, como colores o acabados."></div>
-          <button type="button" id="agregar-tono" class="btn-secondary" data-step="17" data-intro="Haz clic para agregar un nuevo tono."><i class="fas fa-plus"></i> Agregar tono</button>
+          <button type="button" id="agregar-tono" class="btn-secondary" data-step="17" data-intro="Haz clic para agregar un nuevo tono."><i class="fas fa-plus"></i> Agregar</button>
         </div>
         <div class="form-actions">
           <button type="submit" class="btn-primary" data-step="18" data-intro="Guarda los cambios o agrega el producto."><i class="fas fa-save"></i> Guardar producto</button>
@@ -156,10 +177,63 @@
       </div>
     </div>
   </div>
+
   <!-- Scroll to Top Button -->
   <button id="scroll-top-btn" class="scroll-top-btn" title="Volver arriba" data-step="21" data-intro="Usa este botón para volver al inicio de la página.">
     <i class="fas fa-arrow-up"></i>
   </button>
+
+
+<!-- Modal para subir imágenes -->
+<div id="image-upload-modal" class="modal">
+  <div class="modal-content">
+    <span class="modal-close" id="close-upload-modal">×</span>
+    <h3>Generar enlace</h3>
+    
+    <div class="upload-area" id="drop-zone">
+      <input type="file" id="imageInput" class="file-input" accept="image/*">
+      <i class="fas fa-cloud-upload-alt icon-large"></i>
+      <p id="file-info">Arrastra la imagen aquí o hace clic para seleccionar</p>
+    </div>
+    
+    <div class="upload-status hidden" id="upload-status">
+      <div id="upload-progress" class="hidden">
+        <div class="spinner"></div>
+        <p>Subiendo imagen...</p>
+      </div>
+      <div id="upload-success" class="hidden">
+        <i class="fas fa-check-circle"></i>
+        <p>¡Imagen subida exitosamente!</p>
+      </div>
+    </div>
+    
+    <div class="preview-section hidden" id="preview-section">
+      <h4>Vista previa</h4>
+      <div class="image-preview-container">
+        <div class="preview-header">
+          <span>Previsualización</span>
+          <button id="clear-preview" class="btn-icon"><i class="fas fa-times"></i></button>
+        </div>
+        <img id="uploaded-image-preview" class="image-preview" src="" alt="Vista previa">
+      </div>
+    </div>
+    
+    <div class="url-section hidden" id="image-link-container">
+      <h4>Enlace:</h4>
+      <div class="url-copy-group">
+        <input type="text" id="image-url" readonly>
+        <button id="copy-url-btn" class="btn-primary"><i class="fas fa-copy"></i> Copiar</button>
+      </div>
+    </div>
+    
+    <div class="modal-actions">
+      <button id="upload-btn" class="btn-primary" disabled>Subir</button>
+      <button id="cancel-upload-btn" class="btn-secondary">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+
   <!-- Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/intro.js/7.2.0/intro.min.js"></script>
   <script type="module" src="admin.js"></script>
