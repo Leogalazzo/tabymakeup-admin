@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   ['mousedown', 'mousemove', 'keypress', 'scroll', 'click', 'touchstart'].forEach(event => {
-   document.addEventListener(event, resetInactivityTimer);
+    document.addEventListener(event, resetInactivityTimer);
   });
 
   // Verificación de autenticación
@@ -59,6 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const agregarProductoBtn = document.getElementById('agregar-producto-btn');
   const modalClose = document.querySelector('.modal-close');
   const tableSearch = document.getElementById('table-search');
+  const disponibilidadFilter = document.getElementById('disponibilidad-filter');
   const logoutBtn = document.getElementById('logout-btn');
   const modalImagenAmpliada = document.getElementById('modal-imagen-ampliada');
   const imagenAmpliada = document.getElementById('imagen-ampliada');
@@ -67,23 +68,251 @@ document.addEventListener('DOMContentLoaded', function() {
   const confirmModal = document.getElementById('logoutConfirmModal');
   const confirmBtn = document.getElementById('confirmLogout');
   const cancelBtn = document.getElementById('cancelLogout');
+  const uploadImageBtn = document.getElementById('upload-image-btn');
+  const imageUploadModal = document.getElementById('image-upload-modal');
+  const closeUploadModal = document.getElementById('close-upload-modal');
+  const cancelUploadBtn = document.getElementById('cancel-upload-btn');
+  const uploadBtn = document.getElementById('upload-btn');
+  const fileInput = document.getElementById('imageInput');
+  const dropZone = document.getElementById('drop-zone');
+  const clearPreviewBtn = document.getElementById('clear-preview');
+  const copyUrlBtn = document.getElementById('copy-url-btn');
+  const subirDesdeInput = document.getElementById('subir-desde-input');
 
   // Variables de estado
   let editando = false;
   let productoId = null;
   let productos = [];
-  let lastScrollTop = 0;
+  let lastScrollY = 0;
+  let currentInputTarget = null; // Rastrear el campo objetivo (imagen principal o tono)
 
   // Inicialización de modales
   modalImagenAmpliada.style.display = 'none';
+  if (imageUploadModal) imageUploadModal.style.display = 'none';
 
-  // Función de confirmación modificada
+  // Verificar que todos los elementos existan
+  if (!formProducto || !cuerpoProductos || !formTitle || !cancelarEdicion || !tonosContainer ||
+      !agregarTonoBtn || !imagenInput || !imagenPreview || !modalProducto || !agregarProductoBtn ||
+      !modalClose || !tableSearch || !disponibilidadFilter || !logoutBtn || !modalImagenAmpliada || 
+      !imagenAmpliada || !modalImagenClose || !scrollTopBtn || !confirmModal || !confirmBtn ||
+      !cancelBtn || !uploadImageBtn || !imageUploadModal || !closeUploadModal || !cancelUploadBtn ||
+      !uploadBtn || !fileInput || !dropZone || !clearPreviewBtn || !copyUrlBtn || !subirDesdeInput) {
+    console.error('Error: Uno o más elementos del DOM no fueron encontrados');
+    return;
+  }
+
+  // Función para reiniciar el modal de subida de imágenes
+  function resetUploadModal() {
+    fileInput.value = '';
+    document.getElementById('file-info').textContent = 'Arrastra la imagen aquí o hace clic para seleccionar';
+    uploadBtn.disabled = true;
+    document.getElementById('upload-status').classList.add('hidden');
+    document.getElementById('upload-progress').classList.add('hidden');
+    document.getElementById('upload-success').classList.add('hidden');
+    document.getElementById('preview-section').classList.add('hidden');
+    document.getElementById('image-link-container').classList.add('hidden');
+    document.getElementById('image-url').value = '';
+  }
+
+  // Mostrar progreso de subida
+  function showUploadProgress() {
+    document.getElementById('upload-status').classList.remove('hidden');
+    document.getElementById('upload-progress').classList.remove('hidden');
+    document.getElementById('upload-success').classList.add('hidden');
+    uploadBtn.disabled = true;
+  }
+
+  // Mostrar éxito de subida
+  function showUploadSuccess() {
+    document.getElementById('upload-status').classList.remove('hidden');
+    document.getElementById('upload-progress').classList.add('hidden');
+    document.getElementById('upload-success').classList.remove('hidden');
+    const url = document.getElementById('image-url').value;
+    if (url) {
+      if (currentInputTarget) {
+        // Actualizar el campo correspondiente (imagen principal o tono)
+        currentInputTarget.value = url;
+        
+        // Actualizar la vista previa correspondiente
+        let previewElement;
+        if (currentInputTarget.id === 'imagen') {
+          previewElement = imagenPreview;
+        } else if (currentInputTarget.classList.contains('tono-imagen')) {
+          previewElement = currentInputTarget.closest('.tono-input').querySelector('.tono-preview');
+        }
+
+        if (previewElement) {
+          previewElement.src = url;
+          previewElement.style.display = 'block';
+          previewElement.onerror = () => {
+            previewElement.src = '';
+            previewElement.style.display = 'none';
+          };
+        }
+
+        // Disparar evento input para asegurar que se actualice cualquier lógica dependiente
+        const inputEvent = new Event('input', { bubbles: true });
+        currentInputTarget.dispatchEvent(inputEvent);
+
+        // Cerrar el modal inmediatamente para subidas desde el formulario
+        imageUploadModal.style.display = 'none';
+        resetUploadModal();
+        currentInputTarget = null;
+      } else {
+        // Para el botón "Generar link" del encabezado, mantener el modal abierto
+        document.getElementById('image-link-container').classList.remove('hidden');
+      }
+    } else {
+      console.error('No se recibió una URL válida en showUploadSuccess');
+      alert('Error: No se recibió una URL válida al subir la imagen');
+      resetUploadModal();
+      currentInputTarget = null;
+    }
+  }
+
+  // Manejar selección de archivos
+  function handleFileSelect(file) {
+    if (!file) return;
+    document.getElementById('file-info').textContent = `Archivo seleccionado: ${file.name}`;
+    uploadBtn.disabled = false;
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      document.getElementById('uploaded-image-preview').src = event.target.result;
+      document.getElementById('preview-section').classList.remove('hidden');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Subir imagen a ImgBB
+  async function uploadImageToImgBB() {
+    const file = fileInput.files[0];
+    if (!file) {
+      alert("Por favor, selecciona una imagen primero.");
+      return;
+    }
+
+    showUploadProgress();
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = function(event) {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = function() {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob(function(blob) {
+          const formData = new FormData();
+          formData.append("image", blob, file.name);
+          fetch("https://api.imgbb.com/1/upload?key=4c62800d1a545dabb7f779966d7237e6", {
+            method: "POST",
+            body: formData,
+          })
+            .then((res) => res.json())
+            .then((result) => {
+              if (result.success) {
+                const url = result.data.url;
+                document.getElementById('image-url').value = url;
+                showUploadSuccess();
+              } else {
+                throw new Error(result.error?.message || "Error al subir la imagen");
+              }
+            })
+            .catch((err) => {
+              console.error("Error en la subida:", err);
+              alert(`Error al subir la imagen: ${err.message}`);
+              resetUploadModal();
+              currentInputTarget = null;
+            });
+        }, "image/webp", 0.8);
+      };
+    };
+  }
+
+  // Copiar URL al portapapeles
+  function copyImageUrl() {
+    const imageUrlInput = document.getElementById('image-url');
+    imageUrlInput.select();
+    document.execCommand('copy');
+    const originalText = copyUrlBtn.innerHTML;
+    copyUrlBtn.innerHTML = '<i class="fas fa-check"></i> Copiado!';
+    setTimeout(() => {
+      copyUrlBtn.innerHTML = originalText;
+    }, 2000);
+  }
+
+  // Event Listeners para el modal de imágenes
+  uploadImageBtn.addEventListener('click', () => {
+    currentInputTarget = null; // Para el botón "Generar link" del encabezado
+    imageUploadModal.style.display = 'block';
+    resetUploadModal();
+  });
+
+  subirDesdeInput.addEventListener('click', () => {
+    currentInputTarget = imagenInput; // Establecer el campo de imagen principal como objetivo
+    imageUploadModal.style.display = 'block';
+    resetUploadModal();
+  });
+
+  const closeModal = () => {
+    imageUploadModal.style.display = 'none';
+    resetUploadModal();
+    currentInputTarget = null;
+  };
+
+  closeUploadModal.addEventListener('click', closeModal);
+  cancelUploadBtn.addEventListener('click', closeModal);
+
+  clearPreviewBtn.addEventListener('click', () => {
+    document.getElementById('preview-section').classList.add('hidden');
+    resetUploadModal();
+    currentInputTarget = null;
+  });
+
+  uploadBtn.addEventListener('click', uploadImageToImgBB);
+  copyUrlBtn.addEventListener('click', copyImageUrl);
+
+  // Drag and Drop
+  function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  ['dragenter', 'dragover'].forEach(eventName => {
+    dropZone.addEventListener(eventName, () => {
+      dropZone.classList.add('highlight');
+    });
+  });
+
+  ['dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, () => {
+      dropZone.classList.remove('highlight');
+    });
+  });
+
+  dropZone.addEventListener('drop', function(e) {
+    preventDefaults(e);
+    const files = e.dataTransfer.files;
+    if (files.length) {
+      fileInput.files = files;
+      handleFileSelect(files[0]);
+    }
+  });
+
+  fileInput.addEventListener('change', function() {
+    if (fileInput.files.length) {
+      handleFileSelect(fileInput.files[0]);
+    }
+  });
+
+  // Función de confirmación
   function showConfirmModal(title, message, confirmText, onConfirm, showCancel = true) {
     confirmModal.querySelector('h3').textContent = title;
     confirmModal.querySelector('p').textContent = message;
     confirmBtn.textContent = confirmText;
-    cancelBtn.style.display = showCancel ? 'inline-block' : 'none'; // Mostrar u ocultar botón de cancelar
-    
+    cancelBtn.style.display = showCancel ? 'inline-block' : 'none';
     confirmBtn.onclick = async () => {
       try {
         if (onConfirm) await onConfirm();
@@ -91,114 +320,14 @@ document.addEventListener('DOMContentLoaded', function() {
         confirmModal.style.display = 'none';
       }
     };
-    
     if (showCancel) {
       cancelBtn.onclick = () => {
         confirmModal.style.display = 'none';
       };
     }
-    
     confirmModal.style.display = 'flex';
   }
-function startQuickTour() {
-  const intro = introJs();
-  intro.setOptions({
-    steps: [
-      {
-        element: document.querySelector('.admin-header'),
-        intro: '<strong>Panel de Administración</strong><br><br>Centro de control para gestionar todos los productos de la web.',
-        position: 'bottom'
-      },
-      {
-        element: document.querySelector('.volver-tienda'),
-        intro: '<strong>Volver a la tienda</strong><br><br>Ir a la web principal en cualquier momento.',
-        position: 'bottom'
-      },
-      {
-        element: document.querySelector('#logout-btn'),
-        intro: '<strong>Cerrar sesión</strong><br><br>Cierra la sesión del panel administrativo.',
-        position: 'bottom'
-      },
-      {
-        element: document.querySelector('#start-tour-btn'),
-        intro: '<strong>Repetir tour</strong><br><br>Vuelve a ver esta guía en cualquier momento.',
-        position: 'left'
-      },
-      {
-        element: document.querySelector('.table-header'),
-        intro: '<strong>Listado de productos</strong><br><br>Visualiza y gestiona los productos.',
-        position: 'bottom'
-      },
-      {
-        element: document.querySelector('#table-search'),
-        intro: '<strong>Buscar productos</strong><br><br>Filtra por nombre o categoría fácilmente.',
-        position: 'bottom'
-      },
-      {
-        element: document.querySelector('#agregar-producto-btn'),
-        intro: '<strong>Agregar producto</strong><br><br>Crea nuevos productos para el catálogo online.',
-        position: 'left'
-      },
-      {
-        element: document.querySelector('#cuerpo-productos'),
-        intro: '<strong>Tus productos</strong><br><br>En esta sección se muestran todos los productos cargados en la web.',
-        position: 'top'
-      },
-      {
-        element: document.querySelector('.product-card:first-child'),
-        intro: '<strong>Gestión de productos</strong><br><br>Acciones disponibles:<br>• <strong>Editar</strong>: Modificar producto<br>• <strong>Eliminar</strong>: Retirar producto de la web.',
-        position: 'top'
-      },
-      {
-        element: document.querySelector('#scroll-top-btn'),
-        intro: '⬆️ <strong>Acceso rápido</strong><br><br>Vuelve al inicio con un solo clic.',
-        position: 'left'
-      }
-    ],
-    showStepNumbers: false,
-    exitOnOverlayClick: true,
-    exitOnEsc: true,
-    nextLabel: 'Siguiente →',
-    prevLabel: '← Anterior',
-    doneLabel: '¡Listo!',
-    tooltipClass: 'quick-tour-tooltip',
-    highlightClass: 'quick-tour-highlight',
-    scrollToElement: true,
-    scrollPadding: { top: 20, bottom: 20 }
-  });
 
-  // Control preciso del scroll para las tarjetas
-  intro.onbeforechange(function(targetElement) {
-    const currentStep = this._currentStep;
-    
-    // Ajuste especial para las tarjetas de producto
-    if (currentStep === 8 || currentStep === 9) {
-      setTimeout(() => {
-        const firstCard = document.querySelector('.product-card:first-child');
-        if (firstCard) {
-          const cardPosition = firstCard.getBoundingClientRect();
-          const viewportHeight = window.innerHeight;
-          
-          // Calcular posición para que la tarjeta quede en el tercio superior
-          const targetPosition = cardPosition.top - (viewportHeight * 0.2);
-          
-          window.scrollTo({
-            top: window.scrollY + targetPosition,
-            behavior: 'smooth'
-          });
-        }
-      }, 100);
-    }
-  });
-
-  intro.start();
-}
-
-// Iniciar el tour mejorado
-document.getElementById('start-tour-btn').addEventListener('click', function() {
-  resetInactivityTimer();
-  startQuickTour();
-});
   // Cerrar sesión
   logoutBtn.addEventListener('click', () => {
     showConfirmModal(
@@ -215,7 +344,7 @@ document.getElementById('start-tour-btn').addEventListener('click', function() {
           console.error("Error al cerrar sesión:", error);
         }
       },
-      true // Mostrar botón de cancelar
+      true
     );
   });
 
@@ -243,12 +372,16 @@ document.getElementById('start-tour-btn').addEventListener('click', function() {
   });
 
   window.addEventListener('click', (e) => {
-    if (e.target === modalProducto || e.target === modalImagenAmpliada) {
+    if (e.target === modalProducto || e.target === modalImagenAmpliada || e.target === imageUploadModal) {
       e.target.style.display = 'none';
+      if (e.target === imageUploadModal) {
+        resetUploadModal();
+        currentInputTarget = null;
+      }
     }
   });
 
-  // Previsualización de imagen
+  // Previsualización de imagen principal
   imagenInput.addEventListener('input', () => {
     const url = imagenInput.value;
     if (url) {
@@ -274,22 +407,25 @@ document.getElementById('start-tour-btn').addEventListener('click', function() {
   });
 
   // Cargar productos
-  async function cargarProductos(filtro = '') {
+  async function cargarProductos() {
     try {
       const snapshot = await getDocs(collection(db, "productos"));
-      productos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).reverse();
-      renderizarProductos(filtro);
+      productos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      renderizarProductos(tableSearch.value, disponibilidadFilter.value);
     } catch (error) {
       console.error("Error al cargar productos:", error);
     }
   }
 
   // Renderizar productos
-  function renderizarProductos(filtro = '') {
+  function renderizarProductos(searchFilter = '', availabilityFilter = 'all') {
     cuerpoProductos.innerHTML = '';
-    const productosFiltrados = productos.filter(producto =>
-      producto.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
-      producto.categoria.toLowerCase().includes(filtro.toLowerCase())
+    let productosFiltrados = productos.filter(producto =>
+      (producto.nombre.toLowerCase().includes(searchFilter.toLowerCase()) ||
+      producto.categoria.toLowerCase().includes(searchFilter.toLowerCase())) &&
+      (availabilityFilter === 'all' || 
+       (availabilityFilter === 'available' && producto.disponible) ||
+       (availabilityFilter === 'unavailable' && !producto.disponible))
     );
 
     if (productosFiltrados.length === 0) {
@@ -317,7 +453,7 @@ document.getElementById('start-tour-btn').addEventListener('click', function() {
             ? producto.tonos.map(tono => `
                 <img src="${tono.imagen}" alt="${tono.nombre}" class="tono-preview" data-src="${tono.imagen}">
               `).join('')
-            : '<p>Sin tonos</p>'}
+            : '<p>Sin variantes</p>'}
         </div>
         <div class="product-card-actions">
           <button class="editar" data-id="${producto.id}">Editar</button>
@@ -339,25 +475,20 @@ document.getElementById('start-tour-btn').addEventListener('click', function() {
       btn.addEventListener('click', async (e) => {
         const id = e.target.getAttribute('data-id');
         const producto = productos.find(p => p.id === id);
-
         document.getElementById('producto-id').value = id;
         document.getElementById('nombre').value = producto.nombre;
         document.getElementById('categoria').value = producto.categoria;
         document.getElementById('precio').value = producto.precio;
         document.getElementById('imagen').value = producto.imagen;
-        document.getElementById('descripcion').value = producto.descripcion || '';
         document.getElementById('disponible').checked = producto.disponible;
-
         imagenPreview.src = producto.imagen;
         imagenPreview.style.display = 'block';
-
         tonosContainer.innerHTML = '';
         if (producto.tonos && producto.tonos.length > 0) {
           producto.tonos.forEach(tono => {
             agregarTonoInput(tono.nombre, tono.imagen);
           });
         }
-
         formTitle.innerHTML = '<i class="fas fa-edit"></i> Editar producto';
         cancelarEdicion.style.display = 'inline-block';
         editando = true;
@@ -376,20 +507,24 @@ document.getElementById('start-tour-btn').addEventListener('click', function() {
           async () => {
             try {
               await deleteDoc(doc(db, "productos", id));
-              cargarProductos(tableSearch.value);
+              cargarProductos();
             } catch (error) {
               console.error("Error al eliminar producto:", error);
             }
           },
-          true // Mostrar botón de cancelar
+          true
         );
       });
     });
   }
 
-  // Búsqueda
+  // Búsqueda y filtro
   tableSearch.addEventListener('input', () => {
-    renderizarProductos(tableSearch.value);
+    renderizarProductos(tableSearch.value, disponibilidadFilter.value);
+  });
+
+  disponibilidadFilter.addEventListener('change', () => {
+    renderizarProductos(tableSearch.value, disponibilidadFilter.value);
   });
 
   // Gestión de tonos
@@ -397,15 +532,21 @@ document.getElementById('start-tour-btn').addEventListener('click', function() {
     const tonoDiv = document.createElement('div');
     tonoDiv.className = 'tono-input';
     tonoDiv.innerHTML = `
-      <input type="text" class="tono-nombre" placeholder="Nombre del tono" value="${nombre}">
-      <input type="text" class="tono-imagen" placeholder="URL de la imagen del tono" value="${imagen}">
-      <img class="tono-preview" src="${imagen}" alt="Previsualización del tono" style="display: ${imagen ? 'block' : 'none'};">
+      <input type="text" class="tono-nombre" placeholder="Nombre" value="${nombre}">
+      <div style="display: flex; gap: 10px;">
+        <input type="text" class="tono-imagen" placeholder="URL de la imagen" value="${imagen}">
+        <button type="button" class="subir-tono-imagen btn-secondary">
+          <i class="fas fa-upload"></i>
+        </button>
+      </div>
+      <img class="tono-preview" src="${imagen}" alt="Previsualización" style="display: ${imagen ? 'block' : 'none'};">
       <button type="button" class="eliminar-tono">Eliminar</button>
     `;
     tonosContainer.appendChild(tonoDiv);
 
     const tonoImagenInput = tonoDiv.querySelector('.tono-imagen');
     const tonoPreview = tonoDiv.querySelector('.tono-preview');
+    const subirTonoImagenBtn = tonoDiv.querySelector('.subir-tono-imagen');
 
     tonoImagenInput.addEventListener('input', () => {
       const url = tonoImagenInput.value;
@@ -430,6 +571,12 @@ document.getElementById('start-tour-btn').addEventListener('click', function() {
       }
     });
 
+    subirTonoImagenBtn.addEventListener('click', () => {
+      currentInputTarget = tonoImagenInput; // Establecer el campo de tono como objetivo
+      imageUploadModal.style.display = 'block';
+      resetUploadModal();
+    });
+
     tonoDiv.querySelector('.eliminar-tono').addEventListener('click', () => {
       tonoDiv.remove();
     });
@@ -442,29 +589,17 @@ document.getElementById('start-tour-btn').addEventListener('click', function() {
   // Formulario
   formProducto.addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    const nombre = document.getElementById('nombre').value;
+    const nombre = document.getElementById('nombre').value.trim();
     const categoria = document.getElementById('categoria').value;
     const precio = parseFloat(document.getElementById('precio').value);
-    const imagen = document.getElementById('imagen').value;
-    const descripcion = document.getElementById('descripcion').value;
+    const imagen = document.getElementById('imagen').value.trim();
     const disponible = document.getElementById('disponible').checked;
-
     const tonosInputs = document.querySelectorAll('.tono-input');
     const tonos = Array.from(tonosInputs).map(input => ({
-      nombre: input.querySelector('.tono-nombre').value,
-      imagen: input.querySelector('.tono-imagen').value
-    })).filter(tono => tono.nombre.trim() !== '');
-
-    const producto = {
-      nombre,
-      categoria,
-      precio,
-      imagen,
-      descripcion,
-      disponible,
-      tonos
-    };
+      nombre: input.querySelector('.tono-nombre').value.trim(),
+      imagen: input.querySelector('.tono-imagen').value.trim()
+    })).filter(tono => tono.nombre !== '');
+    const producto = { nombre, categoria, precio, imagen, disponible, tonos };
 
     try {
       if (editando) {
@@ -473,10 +608,8 @@ document.getElementById('start-tour-btn').addEventListener('click', function() {
           '¡Producto actualizado!',
           `El producto "${nombre}" fue actualizado exitosamente.`,
           'Aceptar',
-          async () => {
-            // No se necesita acción adicional, solo cerrar el modal
-          },
-          false // No mostrar botón de cancelar
+          async () => {},
+          false
         );
       } else {
         await addDoc(collection(db, "productos"), producto);
@@ -484,13 +617,10 @@ document.getElementById('start-tour-btn').addEventListener('click', function() {
           '¡Producto agregado!',
           `El producto "${nombre}" fue agregado exitosamente.`,
           'Aceptar',
-          async () => {
-            // No se necesita acción adicional, solo cerrar el modal
-          },
-          false // No mostrar botón de cancelar
+          async () => {},
+          false
         );
       }
-
       formProducto.reset();
       tonosContainer.innerHTML = '';
       imagenPreview.src = '';
@@ -508,7 +638,7 @@ document.getElementById('start-tour-btn').addEventListener('click', function() {
         'Hubo un problema al guardar el producto. Por favor, intenta de nuevo.',
         'Aceptar',
         async () => {},
-        false // No mostrar botón de cancelar
+        false
       );
     }
   });
@@ -526,34 +656,53 @@ document.getElementById('start-tour-btn').addEventListener('click', function() {
     modalProducto.style.display = 'none';
   });
 
-  // Scroll
+  // Scroll to top
   scrollTopBtn.addEventListener('click', () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
-  window.addEventListener('scroll', () => {
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    const header = document.querySelector('.admin-header');
+  // Cerrar con Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (modalImagenAmpliada.style.display === 'block') {
+        modalImagenAmpliada.style.display = 'none';
+      } else if (imageUploadModal.style.display === 'block') {
+        imageUploadModal.style.display = 'none';
+        resetUploadModal();
+        currentInputTarget = null;
+      }
+    }
+  });
 
-    if (scrollTop > 300) {
+  // Manejador de scroll optimizado
+
+  const adminHeader = document.querySelector('.admin-header');
+
+  function handleScroll() {
+    const currentScrollY = window.scrollY;
+
+    // Header scroll logic
+    if (currentScrollY > lastScrollY && currentScrollY > 80) {
+      adminHeader.style.transform = 'translateY(-100%)';
+    } else {
+      adminHeader.style.transform = 'translateY(0)';
+    }
+
+    // Show/hide scroll-to-top button
+    if (currentScrollY > 100) {
       scrollTopBtn.classList.add('visible');
     } else {
       scrollTopBtn.classList.remove('visible');
     }
 
-    if (scrollTop > lastScrollTop && scrollTop > header.offsetHeight) {
-      header.classList.add('hidden');
-    } else {
-      header.classList.remove('hidden');
-    }
-    lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
-  });
+    lastScrollY = currentScrollY;
+  }
 
-  // Cerrar con Escape
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && modalImagenAmpliada.style.display === 'block') {
-      modalImagenAmpliada.style.display = 'none';
-    }
+  // Optimización con debounce para el evento scroll
+  let scrollTimeout;
+  window.addEventListener('scroll', () => {
+    clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(handleScroll, 100);
   });
 
   // Carga inicial
