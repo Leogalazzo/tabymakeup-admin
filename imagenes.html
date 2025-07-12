@@ -1,77 +1,133 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Subida a ImgBB en .webp</title>
-  <style>
-    body { font-family: sans-serif; padding: 2rem; background: #f9f9f9; }
-    input, button { margin-top: 1rem; }
-    img { max-width: 300px; margin-top: 1rem; border: 1px solid #ccc; }
-    .link { margin-top: 1rem; word-break: break-all; }
-  </style>
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Subir imagen</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="min-h-screen bg-gray-100 flex items-center justify-center px-4">
+    <div class="w-full max-w-md bg-white shadow-xl rounded-xl p-6 space-y-6">
+      <div class="text-center">
+        <h2 class="text-2xl font-bold text-gray-800">📤 Cargar imagen</h2>
+      </div>
 
-  <h2>Subir imagen </h2>
-  <input type="file" id="imageInput" accept="image/*">
-  <br>
-  <button onclick="convertAndUpload()">Subir imagen</button>
+      <input
+        type="file"
+        id="imageInput"
+        accept="image/*"
+        class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer"
+      />
 
-  <div id="preview"></div>
-  <div class="link" id="imageLink"></div>
+      <button
+        onclick="convertAndUpload()"
+        class="w-full flex justify-center items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 12l-4-4m0 0l-4 4m4-4v12" />
+        </svg>
+        Subir imagen
+      </button>
 
-  <script>
-    function convertAndUpload() {
-      const fileInput = document.getElementById('imageInput');
-      const file = fileInput.files[0];
+      <div id="loading" class="hidden text-center text-sm text-gray-500 animate-pulse">🔄 Subiendo imagen...</div>
 
-      if (!file) {
-        alert("Seleccioná una imagen primero");
-        return;
+      <div id="preview" class="flex justify-center"></div>
+
+      <div class="text-center space-y-2">
+        <div id="imageLink" class="text-sm break-words text-blue-600 underline"></div>
+        <button
+          id="copyBtn"
+          onclick="copyLink()"
+          class="hidden w-full bg-green-600 hover:bg-green-500 text-white font-medium py-2 px-4 rounded-lg transition duration-300"
+        >
+          📋 Copiar link
+        </button>
+        <p id="copyMessage" class="text-green-600 text-sm font-medium hidden">✅ ¡Link copiado!</p>
+      </div>
+    </div>
+
+    <script>
+      let currentLink = "";
+
+      function convertAndUpload() {
+        const fileInput = document.getElementById("imageInput");
+        const file = fileInput.files[0];
+        const preview = document.getElementById("preview");
+        const link = document.getElementById("imageLink");
+        const loading = document.getElementById("loading");
+        const copyBtn = document.getElementById("copyBtn");
+        const copyMessage = document.getElementById("copyMessage");
+
+        // Reset visual
+        preview.innerHTML = "";
+        link.innerHTML = "";
+        copyMessage.classList.add("hidden");
+        copyBtn.classList.add("hidden");
+        loading.classList.remove("hidden");
+
+        if (!file) {
+          alert("Seleccioná una imagen primero.");
+          loading.classList.add("hidden");
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function (event) {
+          const img = new Image();
+          img.src = event.target.result;
+          img.onload = function () {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+
+            canvas.toBlob(function (blob) {
+              const formData = new FormData();
+              formData.append("image", blob, "imagen.webp");
+
+              fetch("https://api.imgbb.com/1/upload?key=b2fea72412df6a82adf27032257cf86b", {
+                method: "POST",
+                body: formData,
+              })
+                .then((res) => res.json())
+                .then((result) => {
+                  loading.classList.add("hidden");
+
+                  if (result.success) {
+                    const url = result.data.url;
+                    currentLink = url;
+
+                    preview.innerHTML = `<img src="${url}" alt="Imagen subida" class="rounded-md shadow-md max-h-64">`;
+                    link.innerHTML = `<a href="${url}" target="_blank">${url}</a>`;
+                    copyBtn.classList.remove("hidden");
+                  } else {
+                    alert("❌ Error al subir la imagen");
+                  }
+                })
+                .catch((err) => {
+                  loading.classList.add("hidden");
+                  alert("❌ Error en la subida");
+                  console.error(err);
+                });
+            }, "image/webp", 0.8);
+          };
+        };
       }
 
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = function(event) {
-        const img = new Image();
-        img.src = event.target.result;
-        img.onload = function() {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.width;
-          canvas.height = img.height;
-
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0);
-
-          // Convertir a webp
-          canvas.toBlob(function(blob) {
-            const formData = new FormData();
-            formData.append('image', blob, 'imagen.webp');
-
-            fetch('https://api.imgbb.com/1/upload?key=50f0ce5bf1eb4dd0fb58566dfb19c59a', {
-              method: 'POST',
-              body: formData
+      function copyLink() {
+        if (currentLink) {
+          navigator.clipboard.writeText(currentLink)
+            .then(() => {
+              document.getElementById("copyMessage").classList.remove("hidden");
+              setTimeout(() => {
+                document.getElementById("copyMessage").classList.add("hidden");
+              }, 2500);
             })
-            .then(res => res.json())
-            .then(result => {
-              if (result.success) {
-                const url = result.data.url;
-                document.getElementById('preview').innerHTML = `<img src="${url}" alt="Imagen subida">`;
-                document.getElementById('imageLink').innerHTML = `<strong>Link directo:</strong><br><a href="${url}" target="_blank">${url}</a>`;
-              } else {
-                alert("Error al subir la imagen");
-              }
-            })
-            .catch(err => {
-              console.error(err);
-              alert("Error en la subida");
-            });
-          }, 'image/webp', 0.8); // Calidad 0.8
-        };
-      };
-    }
-  </script>
-
-</body>
+            .catch(() => alert("Error al copiar el link"));
+        }
+      }
+    </script>
+  </body>
 </html>
