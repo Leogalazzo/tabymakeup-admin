@@ -1,3 +1,4 @@
+
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
 import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js';
@@ -486,7 +487,7 @@ document.addEventListener('DOMContentLoaded', function() {
         tonosContainer.innerHTML = '';
         if (producto.tonos && producto.tonos.length > 0) {
           producto.tonos.forEach(tono => {
-            agregarTonoInput(tono.nombre, tono.imagen);
+            agregarTonoInput(tono.nombre, tono.imagen, tono.disponible);
           });
         }
         formTitle.innerHTML = '<i class="fas fa-edit"></i> Editar producto';
@@ -528,7 +529,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Gestión de tonos
-  function agregarTonoInput(nombre = '', imagen = '') {
+  function agregarTonoInput(nombre = '', imagen = '', disponible = true) {
     const tonoDiv = document.createElement('div');
     tonoDiv.className = 'tono-input';
     tonoDiv.innerHTML = `
@@ -540,6 +541,10 @@ document.addEventListener('DOMContentLoaded', function() {
         </button>
       </div>
       <img class="tono-preview" src="${imagen}" alt="Previsualización" style="display: ${imagen ? 'block' : 'none'};">
+      <label style="display: flex; align-items: center; margin-top: 10px;">
+        <input type="checkbox" class="tono-disponible" ${disponible ? 'checked' : ''}>
+        Disponible
+      </label>
       <button type="button" class="eliminar-tono">Eliminar</button>
     `;
     tonosContainer.appendChild(tonoDiv);
@@ -597,7 +602,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const tonosInputs = document.querySelectorAll('.tono-input');
     const tonos = Array.from(tonosInputs).map(input => ({
       nombre: input.querySelector('.tono-nombre').value.trim(),
-      imagen: input.querySelector('.tono-imagen').value.trim()
+      imagen: input.querySelector('.tono-imagen').value.trim(),
+      disponible: input.querySelector('.tono-disponible').checked
     })).filter(tono => tono.nombre !== '');
     const producto = { nombre, categoria, precio, imagen, disponible, tonos };
 
@@ -675,7 +681,6 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Manejador de scroll optimizado
-
   const adminHeader = document.querySelector('.admin-header');
 
   function handleScroll() {
