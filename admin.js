@@ -482,6 +482,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('precio').value = producto.precio;
         document.getElementById('imagen').value = producto.imagen;
         document.getElementById('disponible').checked = producto.disponible;
+      document.getElementById('esNuevo').checked = producto.esNuevo || false;
         imagenPreview.src = producto.imagen;
         imagenPreview.style.display = 'block';
         tonosContainer.innerHTML = '';
@@ -599,16 +600,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const precio = parseFloat(document.getElementById('precio').value);
     const imagen = document.getElementById('imagen').value.trim();
     const disponible = document.getElementById('disponible').checked;
+  const esNuevoManual = document.getElementById('esNuevo').checked;
     const tonosInputs = document.querySelectorAll('.tono-input');
     const tonos = Array.from(tonosInputs).map(input => ({
       nombre: input.querySelector('.tono-nombre').value.trim(),
       imagen: input.querySelector('.tono-imagen').value.trim(),
       disponible: input.querySelector('.tono-disponible').checked
     })).filter(tono => tono.nombre !== '');
-    const producto = { nombre, categoria, precio, imagen, disponible, tonos };
+    const producto = { nombre, categoria, precio, imagen, disponible, tonos, esNuevo: esNuevoManual };
 
     try {
       if (editando) {
+        // Preservar la fecha de subida original al editar
+        const productoOriginal = productos.find(p => p.id === productoId);
+        if (productoOriginal && productoOriginal.fechaSubida) {
+          producto.fechaSubida = productoOriginal.fechaSubida;
+        }
         await updateDoc(doc(db, "productos", productoId), producto);
         showConfirmModal(
           '¡Producto actualizado!',
@@ -618,6 +625,7 @@ document.addEventListener('DOMContentLoaded', function() {
           false
         );
       } else {
+        producto.fechaSubida = new Date().toISOString();
         await addDoc(collection(db, "productos"), producto);
         showConfirmModal(
           '¡Producto agregado!',
